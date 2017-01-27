@@ -22,6 +22,8 @@ function bps_get_request ()
 	else if (isset ($_COOKIE['bps_request']))
 		$request = json_decode (stripslashes ($_COOKIE['bps_request']), true);
 
+	
+
 	return apply_filters ('bps_request', $request);
 }
 
@@ -71,9 +73,11 @@ function bps_filter_members ($qs, $object)
 
 function bps_search ()
 {
+	
 	$results = array ('users' => array (0), 'validated' => true);
 
 	list ($x, $fields) = bps_get_fields ();
+	
 	foreach ($fields as $f)
 	{
 		if (!isset ($f->filter))  continue;

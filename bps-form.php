@@ -73,11 +73,12 @@ function bps_display_form ($form, $template='', $location='')
 
 add_action ('bp_before_directory_members_content', 'bps_display_filters');
 function bps_display_filters ()
-{
+{	
 	$form = bps_active_form ();
 	if ($form === false)  return false;
 
 	bps_set_template_args ($form, 'filters');
+	
 	bps_call_template ('members/bps-filters');
 
 	return true;

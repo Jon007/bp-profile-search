@@ -1,11 +1,24 @@
 <?php
+add_filter('bps_fields_setup', 'add_my_fields',999);
+function add_my_fields($field_list) {
+	foreach ($field_list as $field) {
+		if($field->type=='coordinates') {
+			$field->display = 'gmap';
+			$field->filter = 'place';
+		}
+			
+	}
+
+	return $field_list;
+
+}
 
 function bps_get_fields ()
 {
 	static $groups = array ();
 	static $fields = array ();
 
-	if (count ($groups))  return array ($groups, $fields);
+	// if (count ($groups))  return array ($groups, $fields); // We need bps_parse_request to be executed
 
 	$field_list = apply_filters ('bps_fields_setup', array ());
 	foreach ($field_list as $f)
@@ -32,8 +45,9 @@ function bps_parse_request ($fields, $request)
 		if ($k === false)  continue;
 
 		$f = $fields[$k];
-		$filter = ($key == $f->code)? '': substr ($key, strlen ($f->code));		// for PHP < 7.0.0
-		if (!bps_validate_filter ($filter, $f))  continue;
+		$filter = ($key == $f->code)? '': substr ($key, strlen ($f->code));		// for PHP < 7.0.0		
+		
+		if (!bps_validate_filter ($filter, $f))  continue;		
 
 		switch ($filter)
 		{
@@ -85,12 +99,12 @@ function bps_match_key ($key, $fields)
 function bps_validate_filter ($filter, $f)
 {
 	if ($filter == '_min' || $filter == '_max')  $filter = 'range';
-	if ($filter == '_label')  return true;
+	if ($filter == '_label')  return true;	
 
 	if (!empty ($f->filters))  return isset ($f->filters[$filter]);
 
 	$filters = bps_filtersXvalidation ($f);
-	if (isset ($filters[$filter]))  return true;
+	if (isset ($filters[$filter]))  return true;	
 
 	list ($x, $y, $range) = apply_filters ('bps_field_validation', array ('test', 'test', 'test'), $f);
 	if ($range === true && $filter == 'range')  return true;
@@ -175,11 +189,13 @@ function bps_escaped_form_data ()
 
 function bps_escaped_filters_data ()
 {
+
 	$F = new stdClass;
 	$F->action = parse_url ($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 	$F->fields = array ();
 
 	list ($x, $fields) = bps_get_fields ();
+	
 	foreach ($fields as $field)
 	{
 		if (!isset ($field->filter))  continue;

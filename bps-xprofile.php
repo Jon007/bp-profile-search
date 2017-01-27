@@ -61,11 +61,12 @@ function bps_xprofile_search ($f)
 
 	$value = $f->value;
 	$filter = bps_filterXquery ($f);
+	
 
 	$sql = array ('select' => '', 'where' => array ());
 
 	$sql['select'] = "SELECT user_id FROM {$bp->profile->table_name_data}";
-	$sql['where']['field_id'] = $wpdb->prepare ("field_id = %d", $f->id);
+	$sql['where']['field_id'] = $wpdb->prepare ("field_id = %d", $f->id);	
 
 	switch ($filter)
 	{
@@ -138,12 +139,64 @@ function bps_xprofile_search ($f)
 		$sql['where'][$filter] = '('. implode ($match, $parts). ')';
 		break;
 
+	case 'place':
+
+		$values = explode(',', $value);
+
+		if( count($values) != 3 ) break;
+
+		$lat = $values[0];
+		$lon = $values[1];
+		$rad = $values[2];
+		
+    	$R = 6371;  // earth's mean radius, km
+	
+    	// first-cut bounding box (in degrees)
+    	$maxLat = $lat + rad2deg($rad/$R);
+    	$minLat = $lat - rad2deg($rad/$R);
+    	$maxLon = $lon + rad2deg(asin($rad/$R) / cos(deg2rad($lat)));
+    	$minLon = $lon - rad2deg(asin($rad/$R) / cos(deg2rad($lat)));
+
+    	error_log( 'latitude' . $lat );
+    	error_log( 'longitude' . $lon );
+
+    	error_log( 'radius in km ' . $rad );
+    	error_log( 'radius in degrees ' . rad2deg($rad/$R) );
+
+    	error_log( 'long diff in degrees ' . rad2deg(asin($rad/$R) / cos(deg2rad($lat))) );
+
+    	error_log( 'max lat' . $maxLat );
+    	
+    	$child_fields = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$bp->profile->table_name_fields} WHERE parent_id = %d AND name in ('lat', 'lng') ORDER BY name ", $f->id ) );
+
+    	if( count($child_fields) != 2 ) break;
+
+    	$lat_field = $child_fields[0]->id;
+    	$lng_field = $child_fields[1]->id;
+
+    	error_log('lat field '. print_r($child_fields[0],true));
+    	error_log('lng field '. print_r($child_fields[1],true));
+
+    	$sql['select'] = $wpdb->prepare( "SELECT user_id FROM( 
+    		SELECT user_id, count(*) c 
+    		FROM {$bp->profile->table_name_data} 
+    		where (field_id = %d AND value BETWEEN %d AND %d) OR ( field_id = %d AND value BETWEEN %d AND  %d ) Group BY `user_id` ) t ", 				
+
+    	$lat_field, $minLat, $maxLat, $lng_field, $minLon, $maxLon );
+
+    	$sql['where'] = array('cnt' => 'c >= 2');
+
+		break;
+
 	default:
 		return array ();
 	}
 
-	$sql = apply_filters ('bps_field_sql', $sql, $f);
+	$sql = apply_filters ('bps_field_sql', $sql, $f);	
+
 	$query = $sql['select']. ' WHERE '. implode (' AND ', $sql['where']);
+
+	error_log( $query );
 
 	$results = $wpdb->get_col ($query);
 	return $results;
@@ -210,6 +263,7 @@ function bps_xprofile_filters ($type)
 		'multiselectbox'	=> array ('' => 'default'),
 		'checkbox'			=> array ('' => 'default'),
 		'datebox'			=> array ('range' => 'range'),
+		'coordinates'		=> array ('' => 'default'),
 	);
 
 	if (isset ($filters[$type]))  return $filters[$type];
@@ -250,6 +304,8 @@ function bps_filterXquery ($f)
 	case 'checkbox':
 		$all = apply_filters ('bps_field_checkbox_match_all', false, $f->id);
 		return $all? 'match_all': 'match_any';
+	case 'coordinates':
+		return 'place';
 	}
 
 	return false;
