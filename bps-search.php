@@ -30,6 +30,7 @@ function bps_get_request ()
 function bps_active_form ()
 {
 	$request = bps_get_request ();
+	
 	return isset ($request['bp_profile_search'])? $request['bp_profile_search']: false;
 }
 
@@ -47,10 +48,13 @@ function bps_text_search ()
 add_action ('bp_ajax_querystring', 'bps_filter_members', 99, 2);
 function bps_filter_members ($qs, $object)
 {
+	
+	
 	if ($object != 'members')  return $qs;
-	if (bps_active_form () === false)  return $qs;
+	if (bps_active_form () === false)  return $qs; // this returns false
 
 	$results = bps_search ();
+	
 	if ($results['validated'])
 	{
 		$args = wp_parse_args ($qs);
@@ -68,6 +72,8 @@ function bps_filter_members ($qs, $object)
 		$qs = build_query ($args);
 	}
 
+	
+
 	return $qs;
 }
 
@@ -76,10 +82,11 @@ function bps_search ()
 	
 	$results = array ('users' => array (0), 'validated' => true);
 
-	list ($x, $fields) = bps_get_fields ();
+	list ($x, $fields) = bps_get_fields ();	
 	
 	foreach ($fields as $f)
 	{
+
 		if (!isset ($f->filter))  continue;
 
 		do_action ('bps_before_search', $f);
@@ -89,7 +96,7 @@ function bps_search ()
 			$found = apply_filters ('bps_field_query', array (), $f, $f->code, $f->value);
 
 		do_action ('bps_after_search', $f, $found);
-
+		
 		$match_all = apply_filters ('bps_match_all', true);
 		if ($match_all)
 		{

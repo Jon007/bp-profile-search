@@ -157,15 +157,7 @@ function bps_xprofile_search ($f)
     	$maxLon = $lon + rad2deg(asin($rad/$R) / cos(deg2rad($lat)));
     	$minLon = $lon - rad2deg(asin($rad/$R) / cos(deg2rad($lat)));
 
-    	error_log( 'latitude' . $lat );
-    	error_log( 'longitude' . $lon );
-
-    	error_log( 'radius in km ' . $rad );
-    	error_log( 'radius in degrees ' . rad2deg($rad/$R) );
-
-    	error_log( 'long diff in degrees ' . rad2deg(asin($rad/$R) / cos(deg2rad($lat))) );
-
-    	error_log( 'max lat' . $maxLat );
+    	
     	
     	$child_fields = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$bp->profile->table_name_fields} WHERE parent_id = %d AND name in ('lat', 'lng') ORDER BY name ", $f->id ) );
 
@@ -174,8 +166,7 @@ function bps_xprofile_search ($f)
     	$lat_field = $child_fields[0]->id;
     	$lng_field = $child_fields[1]->id;
 
-    	error_log('lat field '. print_r($child_fields[0],true));
-    	error_log('lng field '. print_r($child_fields[1],true));
+    	
 
     	$sql['select'] = $wpdb->prepare( "SELECT user_id FROM( 
     		SELECT user_id, count(*) c 
@@ -196,7 +187,8 @@ function bps_xprofile_search ($f)
 
 	$query = $sql['select']. ' WHERE '. implode (' AND ', $sql['where']);
 
-	error_log( $query );
+	
+	
 
 	$results = $wpdb->get_col ($query);
 	return $results;

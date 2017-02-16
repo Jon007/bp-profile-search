@@ -3,8 +3,7 @@ add_filter('bps_fields_setup', 'add_my_fields',999);
 function add_my_fields($field_list) {
 	foreach ($field_list as $field) {
 		if($field->type=='coordinates') {
-			$field->display = 'gmap';
-			$field->filter = 'place';
+			$field->display = 'gmap';			
 		}
 			
 	}
@@ -30,6 +29,7 @@ function bps_get_fields ()
 
 	$request = bps_get_request ();
 	bps_parse_request ($fields, $request);
+	
 
 	return array ($groups, $fields);
 }
@@ -46,7 +46,7 @@ function bps_parse_request ($fields, $request)
 
 		$f = $fields[$k];
 		$filter = ($key == $f->code)? '': substr ($key, strlen ($f->code));		// for PHP < 7.0.0		
-		
+	
 		if (!bps_validate_filter ($filter, $f))  continue;		
 
 		switch ($filter)
@@ -56,6 +56,8 @@ function bps_parse_request ($fields, $request)
 			$f->value = $value;
 			$f->values = (array)$f->value;
 			$f->min = $f->max = '';
+			if($f->type == 'coordinates')
+				$f->filter = 'place';
 			break;
 		case '_min':
 			if (!is_numeric ($value))  break;
@@ -195,6 +197,7 @@ function bps_escaped_filters_data ()
 	$F->fields = array ();
 
 	list ($x, $fields) = bps_get_fields ();
+
 	
 	foreach ($fields as $field)
 	{
@@ -213,7 +216,6 @@ function bps_escaped_filters_data ()
 
 	$F = apply_filters ('bps_filters_data', $F);
 	usort ($F->fields, 'bps_sort_fields');
-
 	foreach ($F->fields as $f)
 	{
 		$f->label = esc_attr ($f->label);
